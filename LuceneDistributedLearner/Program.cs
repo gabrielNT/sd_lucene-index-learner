@@ -2,6 +2,8 @@
 using CommandLine;
 using CommandLine.Text;
 using LuceneDistributedLearner;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace LuceneDistributedLearner
 {
@@ -45,21 +47,28 @@ namespace LuceneDistributedLearner
                 }
                 else
                 {
-                    //TODO: colocar como argumento
-                    Console.WriteLine("-----");
+                    //TODO: colocar como argumento o endereco
                     TCP_Backend.Listener listener = new TCP_Backend.Listener("192.168.1.102", (Int32)13000);
                     listener.start();
-                    Console.WriteLine("-----");
-                    TCP_Backend.Client.Connect("192.168.1.102", "OLAR");
-                    TCP_Backend.Client.Connect("192.168.1.102", "OLAR2");
-                    TCP_Backend.Client.Connect("192.168.1.102", "OLAR3");
-                    TCP_Backend.Client.Connect("192.168.1.102", "OLAR4");
-                    TCP_Backend.Client.Connect("192.168.1.102", "OLAR5");
-                    TCP_Backend.Client.Connect("192.168.1.102", "OLAR6");
+                    //System.Threading.Thread.Sleep(10000);
+                    TCP_Backend.Client client = new TCP_Backend.Client("192.168.1.102", (Int32)13000);
+
+                    //client.sendMessage("oi servidorzineo");
+                    string tutui = "vai tomar no cu";
+                    Object objetozineo = (Object)tutui; 
+                    client.sendMessage(objetozineo);
+                    System.Threading.Thread.Sleep(2000);
+                    //for (int i = 0; i < 1000000; i+=2)
+                    //    i-=1;
+                    //client.sendMessage("Tutui gay");
+                    //client.sendMessage("para");
+                    client.stop();
+                    listener.stop();
+
                     //System.Threading.Thread.Sleep(10);
                     //listener.stop();
                 }
-                
+
             }
         }
     }
