@@ -5,6 +5,9 @@ using System.Threading;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.IO;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+
 
 namespace LuceneDistributedLearner.TCP_Backend
 {
@@ -17,13 +20,17 @@ namespace LuceneDistributedLearner.TCP_Backend
         private Thread listenLoopThread;
         private bool listening = true;
         BinaryFormatter formatter;
+        private ConcurrentQueue<Object> dataQueue;
+        private ManualResetEvent resetEvent;
 
-        public Listener(string address, Int32 port)
+        public Listener(string address, Int32 port, ConcurrentQueue<Object> dataQueue, ManualResetEvent resetEvent)
         {          
             this.port = port;
             this.address = address;
             this.server = null;
             this.formatter = new BinaryFormatter();
+            this.dataQueue = dataQueue;
+            this.resetEvent = resetEvent;
         }
 
         public Thread start()
@@ -78,6 +85,7 @@ namespace LuceneDistributedLearner.TCP_Backend
 
         public void stop()
         {
+            Console.WriteLine("[SERVER] Closing server");
             this.listening = false;
             this.server.Stop();
         }
@@ -111,14 +119,13 @@ namespace LuceneDistributedLearner.TCP_Backend
                         data = (string) this.formatter.Deserialize(ms);
                     }
                     Console.WriteLine("[SERVER] Received: {0}", data);
+
+                    // Coloca dados em dataQueue para poderem ser acessados pelos processos
+                    this.dataQueue.Enqueue(data);
+                    resetEvent.Set();
+
+                    // Condicao de parada do loop
                     
-                    // Process the data sent by the client.
-                    data = data.ToUpper();
-
-                    // TODO: Trocar a mensagem
-                    if (data == "PARA")
-                        continueWhile=false;
-
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
 
                     // Send back a response.

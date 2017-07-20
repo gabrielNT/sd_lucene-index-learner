@@ -1,6 +1,8 @@
 ﻿using System;
 using CommandLine;
 using CommandLine.Text;
+using System.Collections.Concurrent;
+using System.Threading;
 using LuceneDistributedLearner;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -16,6 +18,14 @@ namespace LuceneDistributedLearner
         [Option('i', "index-manager", DefaultValue=false, 
             HelpText = "Initialize an Index Manager instance.")]
         public bool isIndexManager { get; set; }
+
+        [Option('a', "address", Required = true,
+            HelpText = "Address in which process will be initialized.")]
+        public string processAddress { get; set; }
+
+        [Option('p', "port", Required = true,
+            HelpText = "Port in which process will be initialized.")]
+        public Int32 processPort { get; set; }
 
         [Option('v', "verbose", DefaultValue = false,
           HelpText = "Prints all messages to standard output.")]
@@ -35,6 +45,24 @@ namespace LuceneDistributedLearner
 
     class Program
     {
+        static private void indexManagerMonitor(ConcurrentQueue<Object> dataQueue, ManualResetEvent resetEvent)
+        {
+            while (true)
+            {
+                // Bloqueia ate chegar uma mensagem
+                resetEvent.WaitOne();
+                Object currMessage;
+
+                while (dataQueue.TryDequeue(out currMessage))
+                {
+                    Console.WriteLine("[PROGRAM] Reading message : " + (string)currMessage);
+                }
+
+                // Quando acabarem as mensagens bloqueia novamente
+                resetEvent.Reset();
+            }
+        }
+
         static void Main(string[] args)
         {
             var options = new Options();
@@ -47,26 +75,37 @@ namespace LuceneDistributedLearner
                 }
                 else
                 {
+                    ManualResetEvent resetEvent = new ManualResetEvent(true); // Signalled state
+                    ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
+
+                    Thread monitorThread = new Thread(() => indexManagerMonitor(dataQueue, resetEvent));
+                    monitorThread.Start();
+
                     //TODO: colocar como argumento o endereco
-                    TCP_Backend.Listener listener = new TCP_Backend.Listener("192.168.1.102", (Int32)13000);
+                    TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort, 
+                                                                             dataQueue, resetEvent);
                     listener.start();
                     //System.Threading.Thread.Sleep(10000);
-                    TCP_Backend.Client client = new TCP_Backend.Client("192.168.1.102", (Int32)13000);
+                    TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
+
+                    TCP_Backend.Client client2 = new TCP_Backend.Client(options.processAddress, options.processPort);
 
                     //client.sendMessage("oi servidorzineo");
                     string tutui = "vai tomar no cu";
                     Object objetozineo = (Object)tutui; 
                     client.sendMessage(objetozineo);
-                    System.Threading.Thread.Sleep(2000);
-                    //for (int i = 0; i < 1000000; i+=2)
-                    //    i-=1;
-                    //client.sendMessage("Tutui gay");
-                    //client.sendMessage("para");
-                    client.stop();
-                    listener.stop();
 
-                    //System.Threading.Thread.Sleep(10);
-                    //listener.stop();
+                    string tutui2 = "vai tomar no cu2";
+                    Object objetozineo2 = (Object)tutui2;
+                    client2.sendMessage(objetozineo2);
+                    client.sendMessage(objetozineo2);
+
+                    client.stop();
+                    client2.stop();
+                    listener.stop();
+                    Console.WriteLine("cabo");
+
+                    Environment.Exit(0);
                 }
 
             }

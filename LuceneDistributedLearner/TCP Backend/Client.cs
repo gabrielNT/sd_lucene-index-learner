@@ -76,8 +76,11 @@ namespace LuceneDistributedLearner.TCP_Backend
         public void stop()
         {
             // Close everything.
+            Console.WriteLine("[CLIENT] Closing client");
             this.stream.Close();
+            Console.WriteLine("1");
             this.client.Close();
+            Console.WriteLine("2");
         }
 
         public void sendHeader(String header)
