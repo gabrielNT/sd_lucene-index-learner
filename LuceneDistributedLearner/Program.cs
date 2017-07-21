@@ -61,10 +61,13 @@ namespace LuceneDistributedLearner
 
                 while (dataQueue.TryDequeue(out currMessage))
                 {
+                    while (LuceneProcessor.luceneIsBusy())
+                        System.Threading.Thread.Sleep(1000);
                     Console.WriteLine("[PROGRAM] Merging data...");
                     LuceneProcessor.indexUpdateWord((List<DataType>)currMessage);
                     while (LuceneProcessor.luceneIsBusy())
                         System.Threading.Thread.Sleep(1000);
+                    LuceneProcessor.saveInDisk();
                 }
 
                 // Quando acabarem as mensagens bloqueia novamente
@@ -72,16 +75,16 @@ namespace LuceneDistributedLearner
             }
         }
 
-        static IEnumerable<DataType> processText(string text)
+        static void processText(string text)
         {
-            LuceneProcessor.initializeSuggestor();
+            while (LuceneProcessor.luceneIsBusy())
+                System.Threading.Thread.Sleep(1000);
             LuceneProcessor.indexText(text);
-            System.Threading.Thread.Sleep(10000);
-            return LuceneProcessor.getAllIndexes();
         }
 
         static void Main(string[] args)
         {
+
             var options = new Options();
             if (Parser.Default.ParseArguments(args, options))
             {
@@ -95,11 +98,11 @@ namespace LuceneDistributedLearner
                     ManualResetEvent resetEvent = new ManualResetEvent(false); // Signalled state
                     ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
                     ConcurrentQueue<Object> answerQueue = new ConcurrentQueue<Object>();
-
+                    LuceneProcessor.initializeSuggestor();
                     if (options.isRawDataProcessor)
                     {
-                        TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort-100);
-                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort,
+                        TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
+                        TCP_Backend.Listener listener = new TCP_Backend.Listener("0.0.0.0", options.processPort,
                                                                                dataQueue, resetEvent, answerQueue);
                         listener.start();
 
@@ -113,7 +116,7 @@ namespace LuceneDistributedLearner
                             {
                                 processed_count++;
                                 Console.WriteLine("[RAW_DATA_PROCESSOR] Reading text to process...");
-                                List<DataType> result = new List<DataType>(processText((string)currMessage));
+                                processText((string)currMessage);
                                 if (processed_count >= 5)
                                     break;
                                 //Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
@@ -129,7 +132,7 @@ namespace LuceneDistributedLearner
                     }
                     else if (options.isIndexManager)
                     {
-                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort-100,
+                        TCP_Backend.Listener listener = new TCP_Backend.Listener("0.0.0.0", options.processPort,
                                                                                dataQueue, resetEvent, answerQueue);
                         listener.start();
                         System.Threading.Thread.Sleep(5000);
@@ -159,58 +162,11 @@ namespace LuceneDistributedLearner
                                 raw_text = "";
                             }                            
                             client.sendMessage(chunk_message);
-                            
-
-
-
-
                         }
-                        Console.ReadLine();
-                        //ManualResetEvent resetEvent = new ManualResetEvent(true); // Signalled state
-                        //ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
-
-                        //Thread monitorThread = new Thread(() => indexManagerMonitor(dataQueue, resetEvent));
-                        //monitorThread.Start();
-
-                        ////TODO: colocar como argumento o endereco
-                        //TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort, 
-                        //                                                         dataQueue, resetEvent);
-                        //listener.start();
+                        Console.ReadLine();                        
                         Environment.Exit(0);
                     }
-                    #region referencia
-                    //ManualResetEvent resetEvent = new ManualResetEvent(true); // Signalled state
-                    //ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
-
-                    //Thread monitorThread = new Thread(() => indexManagerMonitor(dataQueue, resetEvent));
-                    //monitorThread.Start();
-
-                    ////TODO: colocar como argumento o endereco
-                    //TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort, 
-                    //                                                         dataQueue, resetEvent);
-                    //listener.start();
-                    ////System.Threading.Thread.Sleep(10000);
-                    //TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
-
-                    //TCP_Backend.Client client2 = new TCP_Backend.Client(options.processAddress, options.processPort);
-
-                    ////client.sendMessage("oi servidorzineo");
-                    //string tutui = "vai tomar no cu";
-                    //Object chunk_message = (Object)tutui; 
-                    //client.sendMessage(chunk_message);
-
-                    //string tutui2 = "vai tomar no cu2";
-                    //Object chunk_message2 = (Object)tutui2;
-                    //client2.sendMessage(chunk_message2);
-                    //client.sendMessage(chunk_message2);
-
-                    //client.stop();
-                    //client2.stop();
-                    //listener.stop();
-                    //Console.WriteLine("cabo");
-
-                    //Environment.Exit(0);
-                    #endregion
+                    
 
                 }
             }
