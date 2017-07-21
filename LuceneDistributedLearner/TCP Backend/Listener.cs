@@ -91,7 +91,7 @@ namespace LuceneDistributedLearner.TCP_Backend
 
         public void stop()
         {
-            Console.WriteLine("[SERVER] Closing server");
+            Console.WriteLine("[SERVER] Closing server...");
             this.listening = false;
             this.server.Stop();
         }
@@ -142,7 +142,7 @@ namespace LuceneDistributedLearner.TCP_Backend
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("[SERVER]Corrupted message");
+                        Console.WriteLine("[SERVER] Corrupted message!");
                         continue;
                     }
                     

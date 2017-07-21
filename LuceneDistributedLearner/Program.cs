@@ -63,11 +63,11 @@ namespace LuceneDistributedLearner
                 {
                     while (LuceneProcessor.luceneIsBusy())
                         System.Threading.Thread.Sleep(1000);
-                    Console.WriteLine("[PROGRAM] Merging data...");
+                    Console.WriteLine("[INDEX_MANAGER] Merging data...");
                     if (!(LuceneProcessor.luceneIsBusy()))
                         LuceneProcessor.indexUpdateWord(((IEnumerable)currMessage).Cast<DataType>().ToList());
                 }
-
+                Console.WriteLine("[INDEX_MANAGER] Done!");
                 // Quando acabarem as mensagens bloqueia novamente
                 resetEvent.Reset();
             }
@@ -95,7 +95,7 @@ namespace LuceneDistributedLearner
                         TCP_Backend.Listener listener = new TCP_Backend.Listener("0.0.0.0", options.processPort,
                                                                                dataQueue, resetEvent, answerQueue);
                         listener.start();
-
+                        Console.WriteLine("[RAW_DATA_PROCESSOR] Start...");
                         while (true)
                         {
                             // Bloqueia ate chegar uma mensagem
@@ -111,8 +111,10 @@ namespace LuceneDistributedLearner
                                 while (LuceneProcessor.luceneIsBusy())
                                     System.Threading.Thread.Sleep(500);
                             }
-                            if(!LuceneProcessor.luceneIsBusy())
+                            if (!LuceneProcessor.luceneIsBusy()) 
                                 client.sendMessage((object)LuceneProcessor.getAllIndexes());
+
+                            Console.WriteLine("[RAW_DATA_PROCESSOR] Reading done!");
                             // Quando acabarem as mensagens bloqueia novamente
                             resetEvent.Reset();
                         }

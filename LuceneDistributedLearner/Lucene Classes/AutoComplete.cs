@@ -157,7 +157,6 @@ namespace AutoComplete.Classes
             string InsertedWord = "";
             foreach (string word in text)
             {
-                Console.WriteLine("Number of words indexed = " + numberOfWordsIndexed.ToString());
                 if (_stopNow)
                 {
                     break;
@@ -179,6 +178,7 @@ namespace AutoComplete.Classes
                     }
                 }    
             }
+            Console.WriteLine("Number of words indexed = " + numberOfWordsIndexed.ToString());
             _isIndexing = false;
             
         }
