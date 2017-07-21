@@ -84,7 +84,6 @@ namespace LuceneDistributedLearner
 
         static void Main(string[] args)
         {
-
             var options = new Options();
             if (Parser.Default.ParseArguments(args, options))
             {
@@ -118,14 +117,19 @@ namespace LuceneDistributedLearner
                                 Console.WriteLine("[RAW_DATA_PROCESSOR] Reading text to process...");
                                 processText((string)currMessage);
                                 if (processed_count >= 5)
-                                    break;
+                                {
+                                    LuceneProcessor.saveInDisk();
+                                    client.sendMessage((object)LuceneProcessor.getAllIndexes());
+                                }
                                 //Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
                             }
+                            LuceneProcessor.saveInDisk();
                             client.sendMessage((object)LuceneProcessor.getAllIndexes());
                             //TODO: Mandar result para o IndexManager processar!
                             // Quando acabarem as mensagens bloqueia novamente
                             resetEvent.Reset();
                         }
+                        Console.ReadLine();
                         Environment.Exit(0);
                         
                        

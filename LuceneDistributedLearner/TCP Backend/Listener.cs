@@ -127,13 +127,19 @@ namespace LuceneDistributedLearner.TCP_Backend
                 // Loop to receive all the data sent by the client.
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                 {
-                    // Translate data bytes to a ASCII string.
-                    //data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                    using (MemoryStream ms = new MemoryStream())
+                    try
                     {
-                        ms.Write(bytes, 0, bytes.Length);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        data = this.formatter.Deserialize(ms);
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            ms.Write(bytes, 0, bytes.Length);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            data = this.formatter.Deserialize(ms);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("[SERVER]Corrupted message");
+                        continue;
                     }
 
                     // Coloca dados em dataQueue para poderem ser acessados pelos processos
