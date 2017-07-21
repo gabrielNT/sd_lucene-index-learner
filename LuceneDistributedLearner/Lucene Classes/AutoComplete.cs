@@ -47,9 +47,10 @@ namespace AutoComplete.Classes
         public static void indexText(string words)
         {
             string[] wordsToBeIndexed = Regex.Split(words, @"\W+");
-            Thread indexingThread = new Thread(() => indexInThread(wordsToBeIndexed, false));
-            indexingThread.Priority = ThreadPriority.Highest;
-            indexingThread.Start();
+            indexInThread(wordsToBeIndexed, false);
+            //Thread indexingThread = new Thread(() => indexInThread(wordsToBeIndexed, false));
+            //indexingThread.Priority = ThreadPriority.Highest;
+            //indexingThread.Start();
         }
 
         public static IEnumerable<DataType> getSuggestions(string prefix)
@@ -88,8 +89,9 @@ namespace AutoComplete.Classes
 
         public static IEnumerable<DataType> getAllIndexes()
         {
-            if (_isIndexing)
-                StopIndexing();
+            while (_isIndexing)
+                System.Threading.Thread.Sleep(500);
+            StopIndexing();
             System.Threading.Thread.Sleep(1000);
             List<DataType> suggestions = new List<DataType>();
             IEnumerable<DataType> searchResults = new List<DataType>();
@@ -105,7 +107,8 @@ namespace AutoComplete.Classes
             foreach (DataType word in query.Reverse<DataType>())
             {
                 suggestions.Add(word);
-            }    
+            }
+            _stopNow = false;    
             return suggestions;
         }
 
@@ -162,9 +165,9 @@ namespace AutoComplete.Classes
             string InsertedWord = "";
             foreach (string word in text)
             {
+                Console.WriteLine("Number of words indexed = " + numberOfWordsIndexed.ToString());
                 if (_stopNow)
                 {
-                    Console.WriteLine("Number of words indexed = " + numberOfWordsIndexed.ToString());
                     break;
                 }
                 numberOfWordsIndexed++;
