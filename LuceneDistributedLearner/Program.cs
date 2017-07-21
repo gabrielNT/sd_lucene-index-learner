@@ -98,8 +98,8 @@ namespace LuceneDistributedLearner
 
                     if (options.isRawDataProcessor)
                     {
-                        TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort-100);
-                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort,
+                        TCP_Backend.Client client = new TCP_Backend.Client("192.168.0.18", options.processPort);
+                        TCP_Backend.Listener listener = new TCP_Backend.Listener("0.0.0.0", options.processPort,
                                                                                dataQueue, resetEvent, answerQueue);
                         listener.start();
 
@@ -129,7 +129,7 @@ namespace LuceneDistributedLearner
                     }
                     else if (options.isIndexManager)
                     {
-                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort-100,
+                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort,
                                                                                dataQueue, resetEvent, answerQueue);
                         listener.start();
                         System.Threading.Thread.Sleep(5000);
