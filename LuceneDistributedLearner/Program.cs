@@ -72,16 +72,16 @@ namespace LuceneDistributedLearner
             }
         }
 
-        static IEnumerable<DataType> processText(string text)
+        static void processText(string text)
         {
-            LuceneProcessor.initializeSuggestor();
+            while (LuceneProcessor.luceneIsBusy())
+                System.Threading.Thread.Sleep(1000);
             LuceneProcessor.indexText(text);
-            System.Threading.Thread.Sleep(10000);
-            return LuceneProcessor.getAllIndexes();
         }
 
         static void Main(string[] args)
         {
+            LuceneProcessor.initializeSuggestor();
             var options = new Options();
             if (Parser.Default.ParseArguments(args, options))
             {
@@ -98,7 +98,7 @@ namespace LuceneDistributedLearner
 
                     if (options.isRawDataProcessor)
                     {
-                        TCP_Backend.Client client = new TCP_Backend.Client("192.168.0.18", options.processPort);
+                        TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
                         TCP_Backend.Listener listener = new TCP_Backend.Listener("0.0.0.0", options.processPort,
                                                                                dataQueue, resetEvent, answerQueue);
                         listener.start();
@@ -113,23 +113,28 @@ namespace LuceneDistributedLearner
                             {
                                 processed_count++;
                                 Console.WriteLine("[RAW_DATA_PROCESSOR] Reading text to process...");
-                                List<DataType> result = new List<DataType>(processText((string)currMessage));
+                                processText((string)currMessage);
                                 if (processed_count >= 5)
-                                    break;
+                                {
+                                    LuceneProcessor.saveInDisk();
+                                    client.sendMessage((object)LuceneProcessor.getAllIndexes());
+                                }
                                 //Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
                             }
+                            LuceneProcessor.saveInDisk();
                             client.sendMessage((object)LuceneProcessor.getAllIndexes());
                             //TODO: Mandar result para o IndexManager processar!
                             // Quando acabarem as mensagens bloqueia novamente
                             resetEvent.Reset();
                         }
+                        Console.ReadLine();
                         Environment.Exit(0);
                         
                        
                     }
                     else if (options.isIndexManager)
                     {
-                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort,
+                        TCP_Backend.Listener listener = new TCP_Backend.Listener("0.0.0.0", options.processPort,
                                                                                dataQueue, resetEvent, answerQueue);
                         listener.start();
                         System.Threading.Thread.Sleep(5000);
