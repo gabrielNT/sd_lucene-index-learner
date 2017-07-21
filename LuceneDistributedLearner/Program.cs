@@ -76,12 +76,12 @@ namespace LuceneDistributedLearner
             }
         }
 
-        static void processText(string text)
-        {
-            while (LuceneProcessor.luceneIsBusy())
-                System.Threading.Thread.Sleep(500);
-            LuceneProcessor.indexText(text);
-        }
+        //static void processText(string text)
+        //{
+        //    while (LuceneProcessor.luceneIsBusy())
+        //        System.Threading.Thread.Sleep(1000);
+        //    LuceneProcessor.indexText(text);
+        //}
 
         static void Main(string[] args)
         {
@@ -116,16 +116,19 @@ namespace LuceneDistributedLearner
                             {
                                 processed_count++;
                                 Console.WriteLine("[RAW_DATA_PROCESSOR] Reading text to process...");
-                                processText((string)currMessage);
-                                if (processed_count >= 5)
-                                {
-                                    LuceneProcessor.saveInDisk();
-                                    client.sendMessage((object)LuceneProcessor.getAllIndexes());
-                                }
+                                Console.WriteLine((string)currMessage);
+                                LuceneProcessor.indexText((string)currMessage);
+                                while (LuceneProcessor.luceneIsBusy())
+                                    System.Threading.Thread.Sleep(500);
+                                //if (processed_count >= 50)
+                                //{
+                                //    LuceneProcessor.saveInDisk();
+                                //    client.sendMessage((object)LuceneProcessor.getAllIndexes());
+                                //}
                                 //Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
                             }
-                            LuceneProcessor.saveInDisk();
-                            client.sendMessage((object)LuceneProcessor.getAllIndexes());
+                            if(!LuceneProcessor.luceneIsBusy())
+                                client.sendMessage((object)LuceneProcessor.getAllIndexes());
                             //TODO: Mandar result para o IndexManager processar!
                             // Quando acabarem as mensagens bloqueia novamente
                             resetEvent.Reset();

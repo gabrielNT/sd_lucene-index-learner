@@ -6,6 +6,9 @@ using System.Threading;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.IO;
+using System.Collections.Generic;
+using AutoComplete.Classes;
+using System.Linq;
 
 namespace LuceneDistributedLearner.TCP_Backend
 {
@@ -50,6 +53,9 @@ namespace LuceneDistributedLearner.TCP_Backend
         public void sendMessage(Object obj)
         {
             Byte[] data;
+
+            List<DataType> x = ((IEnumerable)obj).Cast<DataType>().ToList();
+            Console.WriteLine("[TESTE]" + x[0].Weight.ToString() + x[0].Word);
 
             using (MemoryStream ms = new MemoryStream())
             {
