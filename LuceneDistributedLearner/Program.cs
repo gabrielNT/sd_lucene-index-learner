@@ -1,11 +1,17 @@
 ﻿using System;
 using CommandLine;
 using CommandLine.Text;
+using System.IO;
+using System.Linq;
 using System.Collections.Concurrent;
+using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using LuceneDistributedLearner;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using AutoComplete.Classes;
+using System.Collections.Generic;
 
 namespace LuceneDistributedLearner
 {
@@ -63,6 +69,14 @@ namespace LuceneDistributedLearner
             }
         }
 
+        static IEnumerable<DataType> processText(string text)
+        {
+            LuceneProcessor.initializeSuggestor();
+            LuceneProcessor.indexText(text);
+            System.Threading.Thread.Sleep(10000);
+            return LuceneProcessor.getAllIndexes();
+        }
+
         static void Main(string[] args)
         {
             var options = new Options();
@@ -75,39 +89,114 @@ namespace LuceneDistributedLearner
                 }
                 else
                 {
-                    ManualResetEvent resetEvent = new ManualResetEvent(true); // Signalled state
+                    ManualResetEvent resetEvent = new ManualResetEvent(false); // Signalled state
                     ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
 
-                    Thread monitorThread = new Thread(() => indexManagerMonitor(dataQueue, resetEvent));
-                    monitorThread.Start();
+                    if (options.isRawDataProcessor)
+                    {
+                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort,
+                                                                               dataQueue, resetEvent);
+                        listener.start();
 
-                    //TODO: colocar como argumento o endereco
-                    TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort, 
-                                                                             dataQueue, resetEvent);
-                    listener.start();
-                    //System.Threading.Thread.Sleep(10000);
-                    TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
+                        //while (true)
+                        //{
+                            // Bloqueia ate chegar uma mensagem
+                            resetEvent.WaitOne();
+                            Object currMessage;
 
-                    TCP_Backend.Client client2 = new TCP_Backend.Client(options.processAddress, options.processPort);
+                            while (dataQueue.TryDequeue(out currMessage))
+                            {
+                                Console.WriteLine("[RAW_DATA_PROCESSOR] Reading text to process...");
+                                List<DataType> result = new List<DataType>(processText((string)currMessage));
+                                Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
+                            }
+                            //TODO: Mandar result para o IndexManager processar!
+                            // Quando acabarem as mensagens bloqueia novamente
+                            resetEvent.Reset();
+                        //}
+                        Environment.Exit(0);
+                        
+                       
+                    }
+                    else if (options.isIndexManager)
+                    {
+                        TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
 
-                    //client.sendMessage("oi servidorzineo");
-                    string tutui = "vai tomar no cu";
-                    Object objetozineo = (Object)tutui; 
-                    client.sendMessage(objetozineo);
+                        List<DataType> raw_data_processed = new List<DataType>();
+                        StreamReader reader = new StreamReader(@"C:\Users\Guilherme\Desktop\tutuigatinho - Copy.txt");
+                        string raw_text = reader.ReadToEnd();
+                        string temp_text = "";
+                        while (raw_text != "")
+                        {
+                            Object objetozineo;
+                            try
+                            {
+                                int index = raw_text.IndexOf(' ', 500);
+                                temp_text = raw_text.Substring(0, index); //copio aqui
 
-                    string tutui2 = "vai tomar no cu2";
-                    Object objetozineo2 = (Object)tutui2;
-                    client2.sendMessage(objetozineo2);
-                    client.sendMessage(objetozineo2);
+                                raw_text = raw_text.Substring(index+1); //corto aqui
+                                objetozineo = (Object)temp_text;
+                            }
+                            catch
+                            {
+                                objetozineo = (Object)raw_text;
+                                raw_text = "";
+                            }                            
+                            client.sendMessage(objetozineo);
+                            
 
-                    client.stop();
-                    client2.stop();
-                    listener.stop();
-                    Console.WriteLine("cabo");
 
-                    Environment.Exit(0);
+
+
+                        }
+                        Console.ReadLine();
+                        //ManualResetEvent resetEvent = new ManualResetEvent(true); // Signalled state
+                        //ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
+
+                        //Thread monitorThread = new Thread(() => indexManagerMonitor(dataQueue, resetEvent));
+                        //monitorThread.Start();
+
+                        ////TODO: colocar como argumento o endereco
+                        //TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort, 
+                        //                                                         dataQueue, resetEvent);
+                        //listener.start();
+                        Environment.Exit(0);
+                    }
+                    #region referencia
+                    //ManualResetEvent resetEvent = new ManualResetEvent(true); // Signalled state
+                    //ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
+
+                    //Thread monitorThread = new Thread(() => indexManagerMonitor(dataQueue, resetEvent));
+                    //monitorThread.Start();
+
+                    ////TODO: colocar como argumento o endereco
+                    //TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort, 
+                    //                                                         dataQueue, resetEvent);
+                    //listener.start();
+                    ////System.Threading.Thread.Sleep(10000);
+                    //TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
+
+                    //TCP_Backend.Client client2 = new TCP_Backend.Client(options.processAddress, options.processPort);
+
+                    ////client.sendMessage("oi servidorzineo");
+                    //string tutui = "vai tomar no cu";
+                    //Object objetozineo = (Object)tutui; 
+                    //client.sendMessage(objetozineo);
+
+                    //string tutui2 = "vai tomar no cu2";
+                    //Object objetozineo2 = (Object)tutui2;
+                    //client2.sendMessage(objetozineo2);
+                    //client.sendMessage(objetozineo2);
+
+                    //client.stop();
+                    //client2.stop();
+                    //listener.stop();
+                    //Console.WriteLine("cabo");
+
+                    //Environment.Exit(0);
+                    #endregion
+
                 }
-
             }
         }
     }

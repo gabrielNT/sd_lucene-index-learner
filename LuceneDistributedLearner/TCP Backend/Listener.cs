@@ -95,7 +95,7 @@ namespace LuceneDistributedLearner.TCP_Backend
             TcpClient client = (TcpClient)tcpClient;
             
             // Buffer for reading data
-            Byte[] bytes = new Byte[256];
+            Byte[] bytes = new Byte[2560000];
             String data = null;
 
             // Get a stream object for reading and writing

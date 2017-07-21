@@ -31,7 +31,7 @@ namespace LuceneDistributedLearner.TCP_Backend
             Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
             stream.Write(data, 0, data.Length);
 
-            Console.WriteLine("Sent: {0}", message);
+            Console.WriteLine("Sent message"); //, message);
 
             // Receive the TcpServer.response.
 
