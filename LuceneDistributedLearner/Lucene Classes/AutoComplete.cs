@@ -10,10 +10,6 @@ namespace AutoComplete.Classes
     public static class LuceneProcessor
     {
         private static bool _isNormalizing;
-        private static int typedLetterCount;
-        private static int totalLetterCount;
-        private static string textToBeAnalysed;
-        private static string textToBeIndexed;
         private static LuceneSearch luceneSearch;
         private static int overWeight;
         private static volatile bool _stopNow;
@@ -39,19 +35,13 @@ namespace AutoComplete.Classes
 
         public static void indexUpdateWord(List<DataType> data_list)
         {
-            //Thread updatingThread = new Thread(() => updateInThread(data_list));
             updateInThread(data_list);
-            //updatingThread.Priority = ThreadPriority.Highest;
-            //updatingThread.Start();
         }
 
         public static void indexText(string words)
         {
             string[] wordsToBeIndexed = Regex.Split(words, @"\W+");
             indexInThread(wordsToBeIndexed, false);
-            //Thread indexingThread = new Thread(() => indexInThread(wordsToBeIndexed, false));
-            //indexingThread.Priority = ThreadPriority.Highest;
-            //indexingThread.Start();
         }
 
         public static IEnumerable<DataType> getSuggestions(string prefix)

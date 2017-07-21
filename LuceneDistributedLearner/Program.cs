@@ -64,9 +64,6 @@ namespace LuceneDistributedLearner
                     while (LuceneProcessor.luceneIsBusy())
                         System.Threading.Thread.Sleep(1000);
                     Console.WriteLine("[PROGRAM] Merging data...");
-                    ////((IEnumerable)myObject).Cast<object>().ToList();
-                    //List<DataType> x = ((IEnumerable)currMessage).Cast<DataType>().ToList();
-                    //Console.WriteLine("[TESTE]" + x[0].Weight.ToString() + x[0].Word);
                     if (!(LuceneProcessor.luceneIsBusy()))
                         LuceneProcessor.indexUpdateWord(((IEnumerable)currMessage).Cast<DataType>().ToList());
                 }
@@ -75,13 +72,6 @@ namespace LuceneDistributedLearner
                 resetEvent.Reset();
             }
         }
-
-        //static void processText(string text)
-        //{
-        //    while (LuceneProcessor.luceneIsBusy())
-        //        System.Threading.Thread.Sleep(1000);
-        //    LuceneProcessor.indexText(text);
-        //}
 
         static void Main(string[] args)
         {
@@ -120,16 +110,9 @@ namespace LuceneDistributedLearner
                                 LuceneProcessor.indexText((string)currMessage);
                                 while (LuceneProcessor.luceneIsBusy())
                                     System.Threading.Thread.Sleep(500);
-                                //if (processed_count >= 50)
-                                //{
-                                //    LuceneProcessor.saveInDisk();
-                                //    client.sendMessage((object)LuceneProcessor.getAllIndexes());
-                                //}
-                                //Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
                             }
                             if(!LuceneProcessor.luceneIsBusy())
                                 client.sendMessage((object)LuceneProcessor.getAllIndexes());
-                            //TODO: Mandar result para o IndexManager processar!
                             // Quando acabarem as mensagens bloqueia novamente
                             resetEvent.Reset();
                         }
