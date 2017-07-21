@@ -61,7 +61,10 @@ namespace LuceneDistributedLearner
 
                 while (dataQueue.TryDequeue(out currMessage))
                 {
-                    Console.WriteLine("[PROGRAM] Reading message : " + (string)currMessage);
+                    Console.WriteLine("[PROGRAM] Merging data...");
+                    LuceneProcessor.indexUpdateWord((List<DataType>)currMessage);
+                    while (LuceneProcessor.luceneIsBusy())
+                        System.Threading.Thread.Sleep(1000);
                 }
 
                 // Quando acabarem as mensagens bloqueia novamente
@@ -91,36 +94,49 @@ namespace LuceneDistributedLearner
                 {
                     ManualResetEvent resetEvent = new ManualResetEvent(false); // Signalled state
                     ConcurrentQueue<Object> dataQueue = new ConcurrentQueue<Object>();
+                    ConcurrentQueue<Object> answerQueue = new ConcurrentQueue<Object>();
 
                     if (options.isRawDataProcessor)
                     {
+                        TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort-100);
                         TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort,
-                                                                               dataQueue, resetEvent);
+                                                                               dataQueue, resetEvent, answerQueue);
                         listener.start();
 
-                        //while (true)
-                        //{
+                        while (true)
+                        {
                             // Bloqueia ate chegar uma mensagem
                             resetEvent.WaitOne();
                             Object currMessage;
-
+                            int processed_count = 0;
                             while (dataQueue.TryDequeue(out currMessage))
                             {
+                                processed_count++;
                                 Console.WriteLine("[RAW_DATA_PROCESSOR] Reading text to process...");
                                 List<DataType> result = new List<DataType>(processText((string)currMessage));
-                                Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
+                                if (processed_count >= 5)
+                                    break;
+                                //Console.WriteLine(result[0].Word+'-'+result[0].Weight.ToString());
                             }
+                            client.sendMessage((object)LuceneProcessor.getAllIndexes());
                             //TODO: Mandar result para o IndexManager processar!
                             // Quando acabarem as mensagens bloqueia novamente
                             resetEvent.Reset();
-                        //}
+                        }
                         Environment.Exit(0);
                         
                        
                     }
                     else if (options.isIndexManager)
                     {
+                        TCP_Backend.Listener listener = new TCP_Backend.Listener(options.processAddress, options.processPort-100,
+                                                                               dataQueue, resetEvent, answerQueue);
+                        listener.start();
+                        System.Threading.Thread.Sleep(5000);
                         TCP_Backend.Client client = new TCP_Backend.Client(options.processAddress, options.processPort);
+
+                        Thread monitorThread = new Thread(() => indexManagerMonitor(dataQueue, resetEvent));
+                        monitorThread.Start();
 
                         List<DataType> raw_data_processed = new List<DataType>();
                         StreamReader reader = new StreamReader(@"C:\Users\Guilherme\Desktop\tutuigatinho - Copy.txt");
@@ -128,21 +144,21 @@ namespace LuceneDistributedLearner
                         string temp_text = "";
                         while (raw_text != "")
                         {
-                            Object objetozineo;
+                            Object chunk_message;
                             try
                             {
                                 int index = raw_text.IndexOf(' ', 500);
                                 temp_text = raw_text.Substring(0, index); //copio aqui
 
                                 raw_text = raw_text.Substring(index+1); //corto aqui
-                                objetozineo = (Object)temp_text;
+                                chunk_message = (Object)temp_text;
                             }
                             catch
                             {
-                                objetozineo = (Object)raw_text;
+                                chunk_message = (Object)raw_text;
                                 raw_text = "";
                             }                            
-                            client.sendMessage(objetozineo);
+                            client.sendMessage(chunk_message);
                             
 
 
@@ -180,13 +196,13 @@ namespace LuceneDistributedLearner
 
                     ////client.sendMessage("oi servidorzineo");
                     //string tutui = "vai tomar no cu";
-                    //Object objetozineo = (Object)tutui; 
-                    //client.sendMessage(objetozineo);
+                    //Object chunk_message = (Object)tutui; 
+                    //client.sendMessage(chunk_message);
 
                     //string tutui2 = "vai tomar no cu2";
-                    //Object objetozineo2 = (Object)tutui2;
-                    //client2.sendMessage(objetozineo2);
-                    //client.sendMessage(objetozineo2);
+                    //Object chunk_message2 = (Object)tutui2;
+                    //client2.sendMessage(chunk_message2);
+                    //client.sendMessage(chunk_message2);
 
                     //client.stop();
                     //client2.stop();

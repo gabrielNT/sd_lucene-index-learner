@@ -9,7 +9,8 @@ using Lucene.Net;
 
 namespace AutoComplete.Classes
 {
-    public class DataType
+    [Serializable]
+    public class DataType 
     {
         public int Weight { get; set; }
         public string Word { get; set; }

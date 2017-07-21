@@ -60,17 +60,6 @@ namespace LuceneDistributedLearner.TCP_Backend
             stream.Write(data, 0, data.Length);
 
             Console.WriteLine("[CLIENT] Sent object");
-
-            // Buffer to store the response bytes.
-            data = new Byte[256];
-
-            // String to store the response ASCII representation.
-            String responseData = String.Empty;
-
-            // Read the first batch of the TcpServer response bytes.
-            Int32 bytes = stream.Read(data, 0, data.Length);
-            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-            Console.WriteLine("Received: {0}", responseData);
         }
 
         public void stop()

@@ -21,9 +21,10 @@ namespace LuceneDistributedLearner.TCP_Backend
         private bool listening = true;
         BinaryFormatter formatter;
         private ConcurrentQueue<Object> dataQueue;
+        private ConcurrentQueue<Object> answerQueue;
         private ManualResetEvent resetEvent;
 
-        public Listener(string address, Int32 port, ConcurrentQueue<Object> dataQueue, ManualResetEvent resetEvent)
+        public Listener(string address, Int32 port, ConcurrentQueue<Object> dataQueue, ManualResetEvent resetEvent, ConcurrentQueue<Object> answerQueue)
         {          
             this.port = port;
             this.address = address;
@@ -31,6 +32,7 @@ namespace LuceneDistributedLearner.TCP_Backend
             this.formatter = new BinaryFormatter();
             this.dataQueue = dataQueue;
             this.resetEvent = resetEvent;
+            this.answerQueue = answerQueue;
         }
 
         public Thread start()
@@ -96,7 +98,7 @@ namespace LuceneDistributedLearner.TCP_Backend
             
             // Buffer for reading data
             Byte[] bytes = new Byte[2560000];
-            String data = null;
+            object data = null;
 
             // Get a stream object for reading and writing
             NetworkStream stream = client.GetStream();
@@ -105,7 +107,22 @@ namespace LuceneDistributedLearner.TCP_Backend
 
             while (continueWhile)
             {
-                
+                //object my_out;
+                //// Quando tiver mensagens na fila de "pronto", envia de volta para
+                //// o Client (IndexManager)
+                //if(answerQueue.TryDequeue(out my_out))
+                //{
+                //    Byte[] data_out;
+
+                //    using (MemoryStream ms = new MemoryStream())
+                //    {
+                //        this.formatter.Serialize(ms, my_out);
+                //        data_out = ms.ToArray();
+                //    }
+
+                //    stream.Write(data_out, 0, data_out.Length);
+                //}    
+
                 int i;
                 // Loop to receive all the data sent by the client.
                 while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
@@ -116,21 +133,12 @@ namespace LuceneDistributedLearner.TCP_Backend
                     {
                         ms.Write(bytes, 0, bytes.Length);
                         ms.Seek(0, SeekOrigin.Begin);
-                        data = (string) this.formatter.Deserialize(ms);
+                        data = this.formatter.Deserialize(ms);
                     }
-                    Console.WriteLine("[SERVER] Received: {0}", data);
 
                     // Coloca dados em dataQueue para poderem ser acessados pelos processos
                     this.dataQueue.Enqueue(data);
                     resetEvent.Set();
-
-                    // Condicao de parada do loop
-                    
-                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
-
-                    // Send back a response.
-                    stream.Write(msg, 0, msg.Length);
-                    Console.WriteLine("[SERVER] Sent: {0}", data);
                 }
             }
             // Shutdown and end connection

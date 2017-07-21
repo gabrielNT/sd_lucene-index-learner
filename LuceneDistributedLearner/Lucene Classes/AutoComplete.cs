@@ -18,11 +18,15 @@ namespace AutoComplete.Classes
         private static int overWeight;
         private static volatile bool _stopNow;
         private static volatile bool _isIndexing;
+        private static volatile bool _isUpdating;
         
 
         public static void initializeSuggestor()
         {
             luceneSearch = new LuceneSearch("lucene_index");
+            _isIndexing = false;
+            _isUpdating = false;
+            _stopNow = false;
         }
 
         public static void indexWord(string word)
@@ -122,8 +126,16 @@ namespace AutoComplete.Classes
             _stopNow = true;
         }
 
+        public static bool luceneIsBusy()
+        {
+            if (_isIndexing || _isUpdating)
+                return true;
+            return false;
+        }
+
         private static void updateInThread(List<DataType>data_list)
         {
+            _isUpdating = true;
             foreach (DataType data in data_list)
             {
                 if (data.Word.Length > 3)
@@ -140,6 +152,7 @@ namespace AutoComplete.Classes
                     }
                 }
             }
+            _isUpdating = false;
         }
 
         private static void indexInThread(string[] text, bool isUserEntry)
