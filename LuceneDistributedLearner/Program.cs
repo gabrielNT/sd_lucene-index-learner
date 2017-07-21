@@ -64,10 +64,11 @@ namespace LuceneDistributedLearner
                     while (LuceneProcessor.luceneIsBusy())
                         System.Threading.Thread.Sleep(1000);
                     Console.WriteLine("[PROGRAM] Merging data...");
-                    LuceneProcessor.indexUpdateWord((List<DataType>)currMessage);
-                    while (LuceneProcessor.luceneIsBusy())
-                        System.Threading.Thread.Sleep(1000);
-                    LuceneProcessor.saveInDisk();
+                    ////((IEnumerable)myObject).Cast<object>().ToList();
+                    //List<DataType> x = ((IEnumerable)currMessage).Cast<DataType>().ToList();
+                    //Console.WriteLine("[TESTE]" + x[0].Weight.ToString() + x[0].Word);
+                    if (!(LuceneProcessor.luceneIsBusy()))
+                        LuceneProcessor.indexUpdateWord(((IEnumerable)currMessage).Cast<DataType>().ToList());
                 }
 
                 // Quando acabarem as mensagens bloqueia novamente
@@ -78,7 +79,7 @@ namespace LuceneDistributedLearner
         static void processText(string text)
         {
             while (LuceneProcessor.luceneIsBusy())
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(500);
             LuceneProcessor.indexText(text);
         }
 
@@ -146,7 +147,7 @@ namespace LuceneDistributedLearner
                         monitorThread.Start();
 
                         List<DataType> raw_data_processed = new List<DataType>();
-                        StreamReader reader = new StreamReader(@"C:\Users\Guilherme\Desktop\tutuigatinho - Copy.txt");
+                        StreamReader reader = new StreamReader(@"C:\Users\Guilherme\Desktop\resumo_0630.txt");
                         string raw_text = reader.ReadToEnd();
                         string temp_text = "";
                         while (raw_text != "")
@@ -166,6 +167,7 @@ namespace LuceneDistributedLearner
                                 raw_text = "";
                             }                            
                             client.sendMessage(chunk_message);
+                            System.Threading.Thread.Sleep(1000);
                         }
                         Console.ReadLine();                        
                         Environment.Exit(0);

@@ -6,7 +6,11 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.IO;
 using System.Collections.Concurrent;
+using System.Collections;
 using System.Threading.Tasks;
+using AutoComplete.Classes;
+using System.Collections.Generic;
+using System.Linq;
 
 
 namespace LuceneDistributedLearner.TCP_Backend
@@ -141,7 +145,7 @@ namespace LuceneDistributedLearner.TCP_Backend
                         Console.WriteLine("[SERVER]Corrupted message");
                         continue;
                     }
-
+                    
                     // Coloca dados em dataQueue para poderem ser acessados pelos processos
                     this.dataQueue.Enqueue(data);
                     resetEvent.Set();

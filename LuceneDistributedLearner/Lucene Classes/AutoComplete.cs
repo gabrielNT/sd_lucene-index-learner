@@ -39,9 +39,10 @@ namespace AutoComplete.Classes
 
         public static void indexUpdateWord(List<DataType> data_list)
         {
-            Thread updatingThread = new Thread(() => updateInThread(data_list));
-            updatingThread.Priority = ThreadPriority.Highest;
-            updatingThread.Start();
+            //Thread updatingThread = new Thread(() => updateInThread(data_list));
+            updateInThread(data_list);
+            //updatingThread.Priority = ThreadPriority.Highest;
+            //updatingThread.Start();
         }
 
         public static void indexText(string words)
@@ -137,7 +138,7 @@ namespace AutoComplete.Classes
         {
             _isUpdating = true;
             foreach (DataType data in data_list)
-            {
+            {                
                 if (data.Word.Length > 3)
                 {
                     string finalWord = RemoveDiacritics(data.Word);
@@ -153,6 +154,7 @@ namespace AutoComplete.Classes
                 }
             }
             _isUpdating = false;
+            saveInDisk();
         }
 
         private static void indexInThread(string[] text, bool isUserEntry)
